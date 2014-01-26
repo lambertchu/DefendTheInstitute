@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+import pygame, sys
+from pygame.locals import *
+from random import randint
+
+### Global Variables
+SPRITE_WIDTH = 40
+BOARD_WIDTH = SPRITE_WIDTH*12
+BOARD_HEIGHT = SPRITE_WIDTH*18
+QUIT_STATE = -1
+START_MENU_STATE = 0
+GAME_STATE = 1
+
+# RGB Color definitions
+black = (0, 0, 0)
+white = (255, 255, 255)
+reds = [(255, 0, 0), (205, 0, 0), (155, 0, 0), (105, 0, 0), (55, 0, 0), (0, 0, 0)]
+greens = [(0, 255, 0), (0, 205, 0), (0, 155, 0), (0, 105, 0), (0, 55, 0), (0, 0, 0)]
+blues = [(0, 0, 255), (0, 0, 205), (0, 0, 155), (0, 0, 105), (0, 0, 55), (0, 0, 0)]
+
+def draw_text(screen, message, position, textSize = 10):
+    font = pygame.font.Font(None, size)
+    text = font.render(message, True, white)
+    textRect = text.get_rect()
+    textRect.centerx = position[0]
+    textRect.centery = position[1]
+    screen.blit(text, textRect)
+
+##### Background stuff #####
+class Background:
+    def __init__(self):
+        self.things = []
+        self.count = 0
+        for i in range(BOARD_HEIGHT):
+            self.update()
+    def update(self):
+        for thing in self.things:
+            if not thing.update():
+                self.things.remove(thing)
+        if self.count == 10:
+            self.count = 0
+            self.things.append(BackgroundThing())
+        self.count += 1
+    def draw(self, screen):
+        screen.fill(black)
+        for thing in self.things:
+            thing.draw(screen)
+
+class BackgroundThing:
+    def __init__(self):
+        self.x = randint(0, BOARD_WIDTH-10)
+        self.y = 0
+        self.width = 3
+        rand = randint(0,2)
+        if rand == 0:
+            self.colors = reds
+        elif rand == 1:
+            self.colors = greens
+        elif rand == 2:
+            self.colors = blues
+    def update(self):
+        if self.y <= BOARD_HEIGHT:
+            self.y += 1
+            return True
+        else:
+            return False
+    def draw(self, screen):
+        for i in range(len(self.colors)):
+            rect=(self.x,self.y-self.width*i,self.width,self.width)
+            pygame.draw.rect(screen,self.colors[i],rect)
+
+##### Start Menu Loop #####
+def start_menu_loop(screen, background, clock):
+    while True:
+        background.update()
+        background.draw(screen)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                return QUIT_STATE
+        pygame.display.update()
+        clock.tick(30)
+
+##### Game Loop #####
+def game_loop(screen):
+    pass
+
+##### Main Loop #####
+if __name__ == "__main__":
+    pygame.init()
+    screen = pygame.display.set_mode((BOARD_WIDTH, BOARD_HEIGHT))
+    pygame.display.set_caption("Protect The Institute")
+    clock = pygame.time.Clock()
+    background = Background()
+    state = START_MENU_STATE
+    while state != QUIT_STATE:
+        if state == START_MENU_STATE:
+            state = start_menu_loop(screen, background, clock)
+        elif state == GAME_STATE:
+            state = game_loop(screen, background, clock)
+    pygame.quit()
