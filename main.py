@@ -207,44 +207,40 @@ class Tim(pygame.sprite.Sprite):
         self.health-=inflictedDamage
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, health, Rect, speed, damage):
-        pygame.sprite.Sprite.__init__(self)
-
+    def __init__(self, health, position, speed, damage,):
+        super(Enemy,self).__init__()
         self.Health= health
-        self.Rect= Rect
         self.Speed= speed
         self.Damage= damage
-        Enemy= pyame.image.load('/Users/ytchen33/Desktop/6.177/Defend the Institute/Enemy Mascot Pictures/photo.stanfordtree.jpg')
 
-        pygame.display.update(locationRect)
+        self.image = pygame.image.load('./Pictures/Harvard.jpg').convert_alpha()
+        self.Rect = self.image.get_rect()
+        self.Rect[0] = position[0]
+        self.Rect[1] = position[1]
+
     def moveRight(self, speed):
-        x=self.Rect[0]
-        y=self.Rect[1]
-        x=x+40
-        self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
-        pygame.display.update(self.Rect)
+        self.Rect[0]+=*speed
+
     def moveLeft(self, speed):
-        x=self.Rect[0]
-        y=self.Rect[1]
-        x=x-40
-        self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
-        pygame.display.update(self.Rect)
+        self.Rect[0]-=*speed
+
     def moveUp(self, speed):
-        x=self.Rect[0]
-        y=self.Rect[1]
-        y=x-40
-        self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
-        pygame.display.update(self.Rect)
+        self.Rect[1]-=*speed
+
     def moveDown(self, speed):
-        x=self.location[0]
-        y=self.location[1]
-        y=x+40
-        self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
-        pygame.display.update(self.Rect)
+        self.Rect[1]+=*speed
+
     def Fire(self):
         Wood=Projectile()
+
     def getDamage(self):
         return self.damage
+
+    def draw(self, screen):
+        screen.blit(self.image)
+
+    def takeDamage(self,inflictedDamage):
+        self.Health-=inflictedDamage
 
 def game_loop(screen, background, clock, highScores):
     tim = Tim(10, 1, 10)
