@@ -159,7 +159,23 @@ def high_scores_loop(screen, background, clock, highScores):
 
 ##### Game Loop #####
 class Projectile(pygame.sprite.Sprite):
-    pass
+    def __init__(self, projImage, direction, damage):
+        super.__init__(self)
+        self.direction = direction
+        self.damage = damage
+        self.image = pygame.image.load(projImage).convert_alpha()
+        self.rect = self.image.get_rect()
+    def move(self):
+        if self.direction == "up" and self.rect[1]<=BOARD_HEIGHT:
+            self.rect[1]+=80
+        elif self.direction == "up" and self.rect[1]>BOARD_HEIGHT:
+            pass
+            # remove from screen
+        elif self.direction == "down" and self.rect[1]>=0:
+            self.rect[1]-=80
+        elif self.direction == "down" and self.rect[1]<0:
+            pass
+            # remove from screen
 
 class Tim(pygame.sprite.Sprite):
     def __init__(self,health, damage, speed):
@@ -167,6 +183,7 @@ class Tim(pygame.sprite.Sprite):
         self.health = healh
         self.damage = damage # damage of projectiles
         self.speed = speed # movement speed
+        self.direction = 0
 
         self.image.load('./tim-the-beaver.png').convert_alpha()
         self.rect = self.image.get_rect()
@@ -176,6 +193,10 @@ class Tim(pygame.sprite.Sprite):
             self.rect[0] = 0
         elif self.rect[0] >= BOARD_WIDTH:
             self.rect[0] = BOARD_WIDTH
+    def draw(self, screen):
+        screen.blit(self.image)
+    def takeDamage(self,inflictedDamage):
+        self.health-=inflictedDamage
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, health, Rect, speed, damage):
@@ -229,6 +250,7 @@ class Enemies:
         pass
 
 def game_loop(screen, background, clock, highScores):
+    tim = Tim()
     enemies = Enemies()
     score = 0
     while True:
@@ -238,14 +260,21 @@ def game_loop(screen, background, clock, highScores):
         draw_text(screen,levelText,(100,25),25,white,black)
         scoreText = "Score: " + str(score)
         draw_text(screen,scoreText,(BOARD_WIDTH-100,25),25,white,black)
+        tim.move()
+        tim.draw(screen)
         for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == K_LEFT:
+                    tim.direction = -1
+                elif event.key == K_RIGHT:
+                    tim.direction = 1
+            elif event.type == KEYUP:
+                if event.key == K_LEFT or event.key == K_RIGHT:
+                    tim.direction = 0
             if event.type == QUIT:
                 return QUIT_STATE
         pygame.display.update()
         clock.tick(30)
-
-
-
 
 ##### Main Loop #####
 if __name__ == "__main__":
