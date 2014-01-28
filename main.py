@@ -230,8 +230,9 @@ class Enemy(pygame.sprite.Sprite):
     def moveDown(self, speed):
         self.Rect[1]+=speed
 
-    def Fire(self):
-        Wood=Projectile()
+    def shoot(self,): # returns a Projectile object for the main loop to handle
+        destPos = (self.rect[0]-self.rect[2]/2,self.rect[1]+50)
+        return Projectile('./Pictures/plank.jpg',"down",destPos,self.Damage)
 
     def getDamage(self):
         return self.damage
