@@ -201,14 +201,15 @@ class Tim(pygame.sprite.Sprite):
         self.health-=inflictedDamage
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, health, Rect, speed, damage):
+    def __init__(self, health, Rect, speed, damage,):
         pygame.sprite.Sprite.__init__(self)
 
         self.Health= health
         self.Rect= Rect
         self.Speed= speed
         self.Damage= damage
-        Enemy= pyame.image.load('/Users/ytchen33/Desktop/6.177/Defend the Institute/Enemy Mascot Pictures/photo.stanfordtree.jpg')
+        
+        Enemy= pyame.image.load('./Harvard.jpg')
 
         pygame.display.update(locationRect)
     def moveRight(self, speed):
@@ -239,6 +240,10 @@ class Enemy(pygame.sprite.Sprite):
         Wood=Projectile()
     def getDamage(self):
         return self.damage
+    def draw(self, screen):
+        screen.blit(self.image)
+    def takeDamage(self,inflictedDamage):
+        self.health-=inflictedDamage
 
 class Enemies:
     def __init__(self):
