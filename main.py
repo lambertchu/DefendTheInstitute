@@ -213,7 +213,7 @@ class Enemy(pygame.sprite.Sprite):
         self.Speed= speed
         self.Damage= damage
 
-        self.image = pygame.image.load('./Pictures/Harvard.jpg').convert_alpha()
+        self.image = pygame.image.load('./Pictures/Harvard.png').convert_alpha()
         self.Rect = self.image.get_rect()
         self.Rect[0] = position[0]
         self.Rect[1] = position[1]
@@ -230,12 +230,13 @@ class Enemy(pygame.sprite.Sprite):
     def getDamage(self):
         return self.damage
     def draw(self, screen):
-        screen.blit(self.image)
+        screen.blit(self.image, self.Rect)
     def takeDamage(self,inflictedDamage):
         self.Health-=inflictedDamage
 
 def game_loop(screen, background, clock, highScores):
     tim = Tim(10, 1, 10)
+    enemy = Enemy(5,(10,10),5,1)
     level = 1
     score = 0
     projectiles = []
@@ -248,6 +249,8 @@ def game_loop(screen, background, clock, highScores):
         draw_text(screen,scoreText,(BOARD_WIDTH-100,25),25,white,black)
         tim.move()
         tim.draw(screen)
+        enemy.moveRight(10)
+        enemy.draw(screen)
         newProjectiles = []
         for projectile in projectiles:
             if projectile.move():
