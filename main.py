@@ -207,7 +207,7 @@ class Tim(pygame.sprite.Sprite):
         self.health-=inflictedDamage
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, health, position, speed, damage,):
+    def __init__(self, health, position, speed, damage):
         super(Enemy,self).__init__()
         self.Health= health
         self.Speed= speed
@@ -217,29 +217,22 @@ class Enemy(pygame.sprite.Sprite):
         self.Rect = self.image.get_rect()
         self.Rect[0] = position[0]
         self.Rect[1] = position[1]
-
     def moveRight(self, speed):
         self.Rect[0]+=speed
-
     def moveLeft(self, speed):
         self.Rect[0]-=speed
-
     def moveUp(self, speed):
         self.Rect[1]-=speed
-
     def moveDown(self, speed):
         self.Rect[1]+=speed
 
     def shoot(self,): # returns a Projectile object for the main loop to handle
         destPos = (self.rect[0]-self.rect[2]/2,self.rect[1]+50)
         return Projectile('./Pictures/plank.jpg',"down",destPos,self.Damage)
-
     def getDamage(self):
         return self.damage
-
     def draw(self, screen):
         screen.blit(self.image)
-
     def takeDamage(self,inflictedDamage):
         self.Health-=inflictedDamage
 
