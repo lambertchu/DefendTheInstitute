@@ -236,6 +236,20 @@ class Enemy(pygame.sprite.Sprite):
     def takeDamage(self,inflictedDamage):
         self.Health-=inflictedDamage
 
+class EnemyArmy(pygame.sprite.Sprite):
+    def __init__(self, number, health, position, speed, damage):
+        for i in range (number):
+            CurEnemy=Enemy(self, health, position, speed, damage)
+            CurEnemy.position=(position[0]+i*40,position[1])
+            Army[i]=Enemy(self, health, position, speed, damage)
+
+
+
+
+
+
+
+
 def game_loop(screen, background, clock, highScores):
     tim = Tim(10, 1, 10)
     level = 1
