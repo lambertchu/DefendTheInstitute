@@ -207,7 +207,7 @@ class Tim(pygame.sprite.Sprite):
         self.health-=inflictedDamage
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, health, position, speed, damage,):
+    def __init__(self, health, position, speed, damage):
         super(Enemy,self).__init__()
         self.Health= health
         self.Speed= speed
