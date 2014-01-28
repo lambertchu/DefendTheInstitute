@@ -156,7 +156,11 @@ def high_scores_loop(screen, background, clock, highScores):
         pygame.display.update()
         clock.tick(30)
 
+
 ##### Game Loop #####
+class Projectile(pygame.sprite.Sprite):
+    pass
+
 class Tim(pygame.sprite.Sprite):
     def __init__(self,health, damage, speed):
         super.__init__(self)
@@ -166,13 +170,52 @@ class Tim(pygame.sprite.Sprite):
 
         self.image.load('./tim-the-beaver.png').convert_alpha()
         self.rect = self.image.get_rect()
-
     def move(self):
         self.rect[0]+=self.direction*self.speed
         if self.rect[0] <= 0:
             self.rect[0] = 0
         elif self.rect[0] >= BOARD_WIDTH:
             self.rect[0] = BOARD_WIDTH
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, health, Rect, speed, damage):
+        pygame.sprite.Sprite.__init__(self)
+
+        self.Health= health
+        self.Rect= Rect
+        self.Speed= speed
+        self.Damage= damage
+        Enemy= pyame.image.load('/Users/ytchen33/Desktop/6.177/Defend the Institute/Enemy Mascot Pictures/photo.stanfordtree.jpg')
+
+        pygame.display.update(locationRect)
+    def moveRight(speed):
+        x=self.Rect[0]
+        y=self.Rect[1]
+        x=x+40
+        self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
+        pygame.display.update(self.Rect)
+    def moveLeft(speed):
+        x=self.Rect[0]
+        y=self.Rect[1]
+        x=x-40
+        self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
+        pygame.display.update(self.Rect)
+    def moveUp(speed):
+        x=self.Rect[0]
+        y=self.Rect[1]
+        y=x-40
+        self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
+        pygame.display.update(self.Rect)
+    def moveDown(speed):
+        x=self.location[0]
+        y=self.location[1]
+        y=x+40
+        self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
+        pygame.display.update(self.Rect)
+    def Fire:
+        Wood=Projectile()
+    def getDamage:
+        return self.damage
 
 class Enemies:
     def __init__(self):
@@ -200,6 +243,9 @@ def game_loop(screen, background, clock, highScores):
                 return QUIT_STATE
         pygame.display.update()
         clock.tick(30)
+
+
+
 
 ##### Main Loop #####
 if __name__ == "__main__":
