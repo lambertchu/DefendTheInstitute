@@ -225,9 +225,8 @@ class Enemy(pygame.sprite.Sprite):
         self.Rect[1]-=speed
     def moveDown(self, speed):
         self.Rect[1]+=speed
-
-    def shoot(self,): # returns a Projectile object for the main loop to handle
-        destPos = (self.rect[0]-self.rect[2]/2,self.rect[1]+50)
+    def shoot(self): # returns a Projectile object for the main loop to handle
+        destPos = (self.Rect[0]-self.Rect[2]/2,self.Rect[1]+50)
         return Projectile('./Pictures/plank.jpg',"down",destPos,self.Damage)
     def getDamage(self):
         return self.damage
@@ -238,10 +237,11 @@ class Enemy(pygame.sprite.Sprite):
 
 def game_loop(screen, background, clock, highScores):
     tim = Tim(10, 1, 10)
-    enemy = Enemy(5,(10,10),5,1)
+    enemy = Enemy(5,(25,75),5,1)
     level = 1
     score = 0
     projectiles = []
+    count = 0
     while True:
         background.update()
         background.draw(screen)
@@ -251,7 +251,18 @@ def game_loop(screen, background, clock, highScores):
         draw_text(screen,scoreText,(BOARD_WIDTH-100,25),25,white,black)
         tim.move()
         tim.draw(screen)
-        enemy.moveRight(10)
+        speed = (BOARD_WIDTH-50)/95
+        if count%200 < 95:
+            enemy.moveRight(speed)
+        elif count%200 < 100:
+            enemy.moveDown(speed)
+        elif count%200 < 195:
+            enemy.moveLeft(speed)
+        elif count%200 < 200:
+            enemy.moveDown(speed)
+        if count%69==1:
+            projectiles.append(enemy.shoot())
+        count+=1
         enemy.draw(screen)
         newProjectiles = []
         for projectile in projectiles:
