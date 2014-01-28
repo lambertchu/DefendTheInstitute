@@ -78,7 +78,6 @@ class HighScores:
         with open(self.filename) as f:
             content = f.readlines()
         self.content = [line.strip().split(',') for line in content]
-        print self.content
     def saveToFile(self):
         with open(self.filename, 'w') as f:
             for thing in self.content:
@@ -158,8 +157,32 @@ def high_scores_loop(screen, background, clock, highScores):
         clock.tick(30)
 
 ##### Game Loop #####
-def game_loop(screen):
-    pass
+class Enemies:
+    def __init__(self):
+        self.level = 1
+        self.waves = []
+        self.enemies = []
+    def loadLevel(self,level):
+        if level==1:
+            pass
+    def areAllDead(self):
+        pass
+
+def game_loop(screen, background, clock, highScores):
+    enemies = Enemies()
+    score = 0
+    while True:
+        background.update()
+        background.draw(screen)
+        levelText = "Level: " + str(enemies.level)
+        draw_text(screen,levelText,(100,25),25,white,black)
+        scoreText = "Score: " + str(score)
+        draw_text(screen,scoreText,(BOARD_WIDTH-100,25),25,white,black)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                return QUIT_STATE
+        pygame.display.update()
+        clock.tick(30)
 
 ##### Main Loop #####
 if __name__ == "__main__":
@@ -176,5 +199,5 @@ if __name__ == "__main__":
         elif state == HIGH_SCORES_STATE:
             state = high_scores_loop(screen, background, clock, highScores)
         elif state == GAME_STATE:
-            state = game_loop(screen, background, clock)
+            state = game_loop(screen, background, clock, highScores)
     pygame.quit()
