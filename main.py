@@ -157,6 +157,23 @@ def high_scores_loop(screen, background, clock, highScores):
         clock.tick(30)
 
 ##### Game Loop #####
+class Tim(pygame.sprite.Sprite):
+    def __init__(self,health, damage, speed):
+        super.__init__(self)
+        self.health = healh
+        self.damage = damage # damage of projectiles
+        self.speed = speed # movement speed
+
+        self.image.load('./tim-the-beaver.png').convert_alpha()
+        self.rect = self.image.get_rect()
+
+    def move(self):
+        self.rect[0]+=self.direction*self.speed
+        if self.rect[0] <= 0:
+            self.rect[0] = 0
+        elif self.rect[0] >= BOARD_WIDTH:
+            self.rect[0] = BOARD_WIDTH
+
 class Enemies:
     def __init__(self):
         self.level = 1
