@@ -156,26 +156,29 @@ def high_scores_loop(screen, background, clock, highScores):
         pygame.display.update()
         clock.tick(30)
 
-
 ##### Game Loop #####
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self, projImage, direction, damage):
-        super.__init__(self)
+    def __init__(self, projImage, direction, position, damage):
+        super(Projectile,self).__init__()
         self.direction = direction
         self.damage = damage
         self.image = pygame.image.load(projImage).convert_alpha()
         self.rect = self.image.get_rect()
-    def move(self):
-        if self.direction == "up" and self.rect[1]<=BOARD_HEIGHT:
-            self.rect[1]+=80
-        elif self.direction == "up" and self.rect[1]>BOARD_HEIGHT:
-            pass
-            # remove from screen
-        elif self.direction == "down" and self.rect[1]>=0:
-            self.rect[1]-=80
-        elif self.direction == "down" and self.rect[1]<0:
-            pass
-            # remove from screen
+        self.rect[0] = position[0]
+        self.rect[1] = position[1]
+    def move(self): # returns a boolean that says whether or not the move worked
+        if self.direction == "up" and self.rect[1]>=0:
+            self.rect[1]-=5
+            return True
+        elif self.direction == "up" and self.rect[1]<0:
+            return False
+        elif self.direction == "down" and self.rect[1]<=BOARD_HEIGHT:
+            self.rect[1]+=5
+            return True
+        elif self.direction == "down" and self.rect[1]>BOARD_HEIGHT:
+            return False
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
 
 class Tim(pygame.sprite.Sprite):
     def __init__(self,health, damage, speed):
@@ -197,6 +200,9 @@ class Tim(pygame.sprite.Sprite):
             self.rect[0] = BOARD_WIDTH-self.rect[2]
     def draw(self, screen):
         screen.blit(self.image, self.rect)
+    def shoot(self): # returns a Projectile object for the main loop to handle
+        destPos = (self.rect[0]+self.rect[2]/2,self.rect[1]-50)
+        return Projectile('./Pictures/plank.jpg',"up",destPos,self.damage)
     def takeDamage(self,inflictedDamage):
         self.health-=inflictedDamage
 
@@ -240,36 +246,34 @@ class Enemy(pygame.sprite.Sprite):
     def getDamage(self):
         return self.damage
 
-class Enemies:
-    def __init__(self):
-        self.level = 1
-        self.waves = []
-        self.enemies = []
-    def loadLevel(self,level):
-        if level==1:
-            pass
-    def areAllDead(self):
-        pass
-
 def game_loop(screen, background, clock, highScores):
     tim = Tim(10, 1, 10)
-    enemies = Enemies()
+    level = 1
     score = 0
+    projectiles = []
     while True:
         background.update()
         background.draw(screen)
-        levelText = "Level: " + str(enemies.level)
+        levelText = "Level: " + str(level)
         draw_text(screen,levelText,(100,25),25,white,black)
         scoreText = "Score: " + str(score)
         draw_text(screen,scoreText,(BOARD_WIDTH-100,25),25,white,black)
         tim.move()
         tim.draw(screen)
+        newProjectiles = []
+        for projectile in projectiles:
+            if projectile.move():
+                newProjectiles.append(projectile)
+            projectile.draw(screen)
+        projectiles = newProjectiles
         for event in pygame.event.get():
             if event.type == KEYDOWN:
                 if event.key == K_LEFT:
                     tim.direction = -1
                 elif event.key == K_RIGHT:
                     tim.direction = 1
+                elif event.key == K_SPACE:
+                    projectiles.append(tim.shoot())
             elif event.type == KEYUP:
                 if event.key == K_LEFT or event.key == K_RIGHT:
                     tim.direction = 0
