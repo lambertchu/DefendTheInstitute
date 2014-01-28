@@ -219,16 +219,16 @@ class Enemy(pygame.sprite.Sprite):
         self.Rect[1] = position[1]
 
     def moveRight(self, speed):
-        self.Rect[0]+=*speed
+        self.Rect[0]+=speed
 
     def moveLeft(self, speed):
-        self.Rect[0]-=*speed
+        self.Rect[0]-=speed
 
     def moveUp(self, speed):
-        self.Rect[1]-=*speed
+        self.Rect[1]-=speed
 
     def moveDown(self, speed):
-        self.Rect[1]+=*speed
+        self.Rect[1]+=speed
 
     def Fire(self):
         Wood=Projectile()
