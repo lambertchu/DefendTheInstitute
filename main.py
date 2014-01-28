@@ -209,33 +209,33 @@ class Enemy(pygame.sprite.Sprite):
         Enemy= pyame.image.load('/Users/ytchen33/Desktop/6.177/Defend the Institute/Enemy Mascot Pictures/photo.stanfordtree.jpg')
 
         pygame.display.update(locationRect)
-    def moveRight(speed):
+    def moveRight(self, speed):
         x=self.Rect[0]
         y=self.Rect[1]
         x=x+40
         self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
         pygame.display.update(self.Rect)
-    def moveLeft(speed):
+    def moveLeft(self, speed):
         x=self.Rect[0]
         y=self.Rect[1]
         x=x-40
         self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
         pygame.display.update(self.Rect)
-    def moveUp(speed):
+    def moveUp(self, speed):
         x=self.Rect[0]
         y=self.Rect[1]
         y=x-40
         self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
         pygame.display.update(self.Rect)
-    def moveDown(speed):
+    def moveDown(self, speed):
         x=self.location[0]
         y=self.location[1]
         y=x+40
         self.Rect=pygame.Rect(x,y, self.Rect[2], self.Rect[3])
         pygame.display.update(self.Rect)
-    def Fire:
+    def Fire(self):
         Wood=Projectile()
-    def getDamage:
+    def getDamage(self):
         return self.damage
 
 class Enemies:
