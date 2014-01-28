@@ -179,22 +179,24 @@ class Projectile(pygame.sprite.Sprite):
 
 class Tim(pygame.sprite.Sprite):
     def __init__(self,health, damage, speed):
-        super.__init__(self)
-        self.health = healh
+        super(Tim,self).__init__()
+        self.health = health
         self.damage = damage # damage of projectiles
         self.speed = speed # movement speed
         self.direction = 0
 
-        self.image.load('./tim-the-beaver.png').convert_alpha()
+        self.image = pygame.image.load('./Pictures/tim.jpg').convert_alpha()
         self.rect = self.image.get_rect()
+        self.rect[0] = BOARD_WIDTH/2
+        self.rect[1] = BOARD_HEIGHT-75
     def move(self):
         self.rect[0]+=self.direction*self.speed
         if self.rect[0] <= 0:
             self.rect[0] = 0
-        elif self.rect[0] >= BOARD_WIDTH:
-            self.rect[0] = BOARD_WIDTH
+        elif self.rect[0] >= BOARD_WIDTH-self.rect[2]:
+            self.rect[0] = BOARD_WIDTH-self.rect[2]
     def draw(self, screen):
-        screen.blit(self.image)
+        screen.blit(self.image, self.rect)
     def takeDamage(self,inflictedDamage):
         self.health-=inflictedDamage
 
@@ -250,7 +252,7 @@ class Enemies:
         pass
 
 def game_loop(screen, background, clock, highScores):
-    tim = Tim()
+    tim = Tim(10, 1, 10)
     enemies = Enemies()
     score = 0
     while True:
