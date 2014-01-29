@@ -11,6 +11,8 @@ QUIT_STATE = -1
 START_MENU_STATE = 0
 HIGH_SCORES_STATE = 1
 GAME_STATE = 2
+UPGRADE_STATE = 3
+
 
 # RGB Color definitions
 black = (0, 0, 0)
@@ -244,13 +246,75 @@ class EnemyArmy(pygame.sprite.Sprite):
 
 
 
+def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
+    UPGRADE_DAMAGE_BUTTON = 1
+    UPGRADE_SPEED_BUTTON = 2
+    NEXT_LEVEL_BUTTON = 3
+    selection = UPGRADE_DAMAGE_BUTTON
+    upgradeDamageCost=100
+    upgradeSpeedCost=75
+    while True:
+        background.update()
+        background.draw(screen)
+        draw_text(screen,"UPGRADES",(BOARD_WIDTH/2,100),60,white,black)
+        draw_text(screen,"AVAILABLE MONEY: $" + str(money),(BOARD_WIDTH/2,200),50,white,black)
+        textColor = black if selection==UPGRADE_DAMAGE_BUTTON else white
+        backgroundColor = white if selection == UPGRADE_DAMAGE_BUTTON else black
+        draw_text(screen,"UPGRADE BULLET DAMAGE: $" + str(upgradeDamageCost),(BOARD_WIDTH/2,350),25,textColor,backgroundColor)
+        textColor = black if selection==UPGRADE_SPEED_BUTTON else white
+        backgroundColor = white if selection == UPGRADE_SPEED_BUTTON else black
+        draw_text(screen,"UPGRADE MOVEMENT SPEED: $" + str(upgradeSpeedCost),(BOARD_WIDTH/2,400),25,textColor,backgroundColor)
+
+        textColor = black if selection == NEXT_LEVEL_BUTTON else white
+        backgroundColor = white if selection == NEXT_LEVEL_BUTTON else black
+        draw_text(screen,"PLAY NEXT LEVEL", (BOARD_WIDTH/2,550),50,textColor,backgroundColor)
+        
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key==K_DOWN:
+                    selection+=1
+                    if selection == 4:
+                        selection = 1
+                elif event.key==K_UP:
+                    selection-=1
+                    if selection == 0:
+                        selection = 3
+                elif event.key==K_RETURN:
+                    if selection==NEXT_LEVEL_BUTTON:
+                        return (GAME_STATE) #also needs to return attributes
+                    
+                    elif selection==UPGRADE_DAMAGE_BUTTON:
+                        if money>=upgradeDamageCost:
+                            money-=upgradeDamageCost
+                            timDamage+=.5
+                            upgradeDamageCost=(int)(1.5*upgradeDamageCost)
+
+                            # text appears too briefly!
+                            draw_text(screen,"BULLET DAMAGE UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
+                        else:
+                            draw_text(screen,"NOT ENOUGH MONEY!", (BOARD_WIDTH/2,475),35,reds[0],black)
+            
+                    elif selection==UPGRADE_SPEED_BUTTON:
+                        if money>=upgradeSpeedCost:
+                            money-=upgradeSpeedCost
+                            timSpeed+=.5
+                            upgradeSpeedCost=(int)(1.5*upgradeSpeedCost)
+                            draw_text(screen,"MOVEMENT SPEED UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
+                        else:
+                            draw_text(screen,"NOT ENOUGH MONEY!", (BOARD_WIDTH/2,475),35,reds[0],black)
+
+                    
+            elif event.type == QUIT:
+                return QUIT_STATE
+        pygame.display.update()
+        clock.tick(30)
 
 
 
 
 
 def game_loop(screen, background, clock, highScores):
-    tim = Tim(10, 1, 10)
+    tim = Tim(10,1,10)
     enemy = Enemy(5,(25,75),5,1)
     level = 1
     score = 0
@@ -308,7 +372,7 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
     background = Background()
     highScores = HighScores()
-    state = START_MENU_STATE
+    state = UPGRADE_STATE
     while state != QUIT_STATE:
         if state == START_MENU_STATE:
             state = start_menu_loop(screen, background, clock)
@@ -316,4 +380,6 @@ if __name__ == "__main__":
             state = high_scores_loop(screen, background, clock, highScores)
         elif state == GAME_STATE:
             state = game_loop(screen, background, clock, highScores)
+        elif state == UPGRADE_STATE:
+            state = upgrade_menu_loop(screen,background,clock,500,1,10)
     pygame.quit()
