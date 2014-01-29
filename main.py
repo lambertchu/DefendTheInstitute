@@ -186,7 +186,7 @@ class HealthMeter:
         self.currentHealth = maxHealth
         self.rect = rect
     def setHealth(self, health):
-        self.currentHealth = health
+        self.currentHealth = health if health >= 0 else 0
     def draw(self, screen):
         pygame.draw.rect(screen, reds[0],self.rect,2)
         filledRect = self.rect[:]
@@ -203,7 +203,7 @@ class Tim(pygame.sprite.Sprite):
         self.image = pygame.image.load('./Pictures/tim.jpg').convert_alpha()
         self.rect = self.image.get_rect()
         self.rect[0] = BOARD_WIDTH/2
-        self.rect[1] = BOARD_HEIGHT-75
+        self.rect[1] = BOARD_HEIGHT-100
         healthRect = pygame.Rect(self.rect[0],self.rect[1]+self.rect[3]*.75,\
             self.rect[2], self.rect[3]*.25)
         self.healthMeter = HealthMeter(self.health, healthRect)
@@ -223,11 +223,19 @@ class Tim(pygame.sprite.Sprite):
     def shoot(self): # returns a Projectile object for the main loop to handle
         destPos = (self.rect[0]+self.rect[2]/2,self.rect[1]-50)
         return Projectile('./Pictures/plank.jpg',"up",destPos,self.damage)
-    def takeDamage(self,inflictedDamage):
+    def takeDamage(self,inflictedDamage): # returns a bool saying if Tim is alive
         self.health-=inflictedDamage
+        return True if self.health > 0 else False
 
 class LivesMeter:
-    pass
+    def __init__(self, numLives):
+        self.lives = numLives
+        self.image = pygame.image.load('./Pictures/tim.jpg').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (25,25))
+    def draw(self, screen):
+        draw_text(screen, "Lives:", (30, BOARD_HEIGHT-15), 20, white, black)
+        for i in range(self.lives):
+            screen.blit(self.image, (60+30*i, BOARD_HEIGHT-27.5))
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, health, position, speed, damage):
@@ -266,8 +274,9 @@ class EnemyArmy(pygame.sprite.Sprite):
             Army[i]=Enemy(self, health, position, speed, damage)
 
 def game_loop(screen, background, clock, highScores):
-    tim = Tim(10, 1, 10)
+    tim = Tim(3, 1, 10)
     enemy = Enemy(5,(25,75),5,1)
+    livesMeter = LivesMeter(3)
     level = 1
     score = 0
     money = 0
@@ -282,6 +291,7 @@ def game_loop(screen, background, clock, highScores):
         draw_text(screen,levelText,(100,25),25,white,black)
         scoreText = "Score: " + str(score)
         draw_text(screen,scoreText,(BOARD_WIDTH-100,25),25,white,black)
+        livesMeter.draw(screen)
         # Tim stuff
         tim.update()
         tim.draw(screen)
@@ -310,10 +320,24 @@ def game_loop(screen, background, clock, highScores):
         projectileRects = [projectile.rect for projectile in projectiles]
         index = tim.rect.collidelist(projectileRects)
         if index != -1:
-            tim.takeDamage(projectiles[index].damage)
-            if (tim.health <= 0):
-                print "Tim died!"
-            projectiles.pop(index)
+            if tim.takeDamage(projectiles[index].damage):
+                projectiles.pop(index)
+            else: # Tim died!
+                tim.direction = 0
+                tim.update()
+                tim.draw(screen)
+                pygame.display.update()
+                clock.tick(1)
+                projectiles = []
+                tim = Tim(3, 1, 10)
+                livesMeter.lives -= 1
+                if livesMeter.lives == -1:
+                    # Game Over
+                    draw_text(screen, "GAME OVER", (BOARD_WIDTH/2, BOARD_HEIGHT/2),\
+                        50, white, black)
+                    pygame.display.update()
+                    clock.tick(0.2)
+                    return START_MENU_STATE
         # Input handling
         for event in pygame.event.get():
             if event.type == KEYDOWN:
