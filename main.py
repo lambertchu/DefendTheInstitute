@@ -53,6 +53,7 @@ class BackgroundThing:
     def __init__(self):
         self.x = randint(0, BOARD_WIDTH-10)
         self.y = 0
+
         self.width = 3
         rand = randint(0,2)
         if rand == 0:
@@ -242,31 +243,30 @@ class LivesMeter:
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, health, position, speed, damage):
         super(Enemy,self).__init__()
-        self.Health= health
-        self.Speed= speed
-        self.Damage= damage
+        self.health= health
+        self.speed= speed
+        self.damage= damage
 
         self.image = pygame.image.load('./Pictures/Harvard.png').convert_alpha()
-        self.Rect = self.image.get_rect()
-        self.Rect[0] = position[0]
-        self.Rect[1] = position[1]
+        self.rect = self.image.get_rect()
+        self.rect[0] = position[0]
+        self.rect[1] = position[1]
     def moveRight(self, speed):
-        self.Rect[0]+=speed
+        self.rect[0]+=speed
     def moveLeft(self, speed):
-        self.Rect[0]-=speed
+        self.rect[0]-=speed
     def moveUp(self, speed):
-        self.Rect[1]-=speed
+        self.rect[1]-=speed
     def moveDown(self, speed):
-        self.Rect[1]+=speed
+        self.rect[1]+=speed
     def shoot(self): # returns a Projectile object for the main loop to handle
-        destPos = (self.Rect[0]-self.Rect[2]/2,self.Rect[1]+50)
-        return Projectile('./Pictures/plank.jpg',"down",destPos,self.Damage)
-    def getDamage(self):
-        return self.damage
+        destPos = (self.rect[0]-self.rect[2]/2,self.rect[1]+50)
+        return Projectile('./Pictures/plank.jpg',"down",destPos,self.damage)
     def draw(self, screen):
-        screen.blit(self.image, self.Rect)
-    def takeDamage(self,inflictedDamage):
-        self.Health-=inflictedDamage
+        screen.blit(self.image, self.rect)
+    def takeDamage(self,inflictedDamage): # returns a bool saying if it is alive
+        self.health-=inflictedDamage
+        return True if self.health > 0 else False
 
 class EnemyArmy(pygame.sprite.Sprite):
     def __init__(self, number, health, position, speed, damage):
@@ -274,9 +274,6 @@ class EnemyArmy(pygame.sprite.Sprite):
             CurEnemy=Enemy(self, health, position, speed, damage)
             CurEnemy.position=(position[0]+i*40,position[1])
             Army[i]=Enemy(self, health, position, speed, damage)
-
-<<<<<<< HEAD
-
 
 def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
     UPGRADE_DAMAGE_BUTTON = 1
@@ -300,7 +297,7 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
         textColor = black if selection == NEXT_LEVEL_BUTTON else white
         backgroundColor = white if selection == NEXT_LEVEL_BUTTON else black
         draw_text(screen,"PLAY NEXT LEVEL", (BOARD_WIDTH/2,550),50,textColor,backgroundColor)
-        
+
         for event in pygame.event.get():
             if event.type == KEYDOWN:
                 if event.key==K_DOWN:
@@ -314,43 +311,39 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
                 elif event.key==K_RETURN:
                     if selection==NEXT_LEVEL_BUTTON:
                         return (GAME_STATE) #also needs to return attributes
-                    
                     elif selection==UPGRADE_DAMAGE_BUTTON:
                         if money>=upgradeDamageCost:
                             money-=upgradeDamageCost
                             timDamage+=.5
                             upgradeDamageCost=(int)(1.5*upgradeDamageCost)
 
-                            # text appears too briefly!
                             draw_text(screen,"BULLET DAMAGE UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
+                            pygame.display.update()
+                            clock.tick(1)
                         else:
                             draw_text(screen,"NOT ENOUGH MONEY!", (BOARD_WIDTH/2,475),35,reds[0],black)
-            
+                            pygame.display.update()
+                            clock.tick(1)
+
                     elif selection==UPGRADE_SPEED_BUTTON:
                         if money>=upgradeSpeedCost:
                             money-=upgradeSpeedCost
                             timSpeed+=.5
                             upgradeSpeedCost=(int)(1.5*upgradeSpeedCost)
                             draw_text(screen,"MOVEMENT SPEED UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
+                            pygame.display.update()
+                            clock.tick(1)
                         else:
                             draw_text(screen,"NOT ENOUGH MONEY!", (BOARD_WIDTH/2,475),35,reds[0],black)
-
-                    
+                            pygame.display.update()
+                            clock.tick(1)
             elif event.type == QUIT:
-                return QUIT_STATE
+                return (QUIT_STATE)
         pygame.display.update()
         clock.tick(30)
 
-
-
-
-
-def game_loop(screen, background, clock, highScores):
-    tim = Tim(10,1,10)
-=======
 def game_loop(screen, background, clock, highScores):
     tim = Tim(3, 1, 10)
->>>>>>> cf337a1ef7fe7ded06671408c34e0f453b12e532
     enemy = Enemy(5,(25,75),5,1)
     livesMeter = LivesMeter(3)
     level = 1
@@ -398,6 +391,7 @@ def game_loop(screen, background, clock, highScores):
         if index != -1:
             if tim.takeDamage(projectiles[index].damage):
                 projectiles.pop(index)
+                projectileRects.pop(index)
             else: # Tim died!
                 tim.direction = 0
                 tim.update()
@@ -414,6 +408,15 @@ def game_loop(screen, background, clock, highScores):
                     pygame.display.update()
                     clock.tick(0.2)
                     return START_MENU_STATE
+        index = enemy.rect.collidelist(projectileRects)
+        if index != -1:
+            isAlive = enemy.takeDamage(projectiles[index].damage)
+            projectiles.pop(index)
+            projectileRects.pop(index)
+            if not isAlive:
+                enemy = Enemy(5,(25,75),5,1)
+                score += 10
+                count = 0
         # Input handling
         for event in pygame.event.get():
             if event.type == KEYDOWN:
