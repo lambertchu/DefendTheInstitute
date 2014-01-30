@@ -242,31 +242,32 @@ class LivesMeter:
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, health, position, speed, damage):
         super(Enemy,self).__init__()
-        self.Health= health
-        self.Speed= speed
-        self.Damage= damage
+        self.health= health
+        self.speed= speed
+        self.damage= damage
 
         self.image = pygame.image.load('./Pictures/Harvard.png').convert_alpha()
-        self.Rect = self.image.get_rect()
-        self.Rect[0] = position[0]
-        self.Rect[1] = position[1]
+        self.rect = self.image.get_rect()
+        self.rect[0] = position[0]
+        self.rect[1] = position[1]
     def moveRight(self, speed):
-        self.Rect[0]+=speed
+        self.rect[0]+=speed
     def moveLeft(self, speed):
-        self.Rect[0]-=speed
+        self.rect[0]-=speed
     def moveUp(self, speed):
-        self.Rect[1]-=speed
+        self.rect[1]-=speed
     def moveDown(self, speed):
-        self.Rect[1]+=speed
+        self.rect[1]+=speed
     def shoot(self): # returns a Projectile object for the main loop to handle
-        destPos = (self.Rect[0]-self.Rect[2]/2,self.Rect[1]+50)
-        return Projectile('./Pictures/plank.jpg',"down",destPos,self.Damage)
+        destPos = (self.rect[0]-self.rect[2]/2,self.rect[1]+50)
+        return Projectile('./Pictures/plank.jpg',"down",destPos,self.damage)
     def getDamage(self):
         return self.damage
     def draw(self, screen):
-        screen.blit(self.image, self.Rect)
+        screen.blit(self.image, self.rect)
     def takeDamage(self,inflictedDamage):
-        self.Health-=inflictedDamage
+        self.health-=inflictedDamage
+        return True if self.health > 0 else False
 
 class EnemyArmy(pygame.sprite.Sprite):
     def __init__(self, number, health, position, speed, damage):
@@ -274,8 +275,6 @@ class EnemyArmy(pygame.sprite.Sprite):
             CurEnemy=Enemy(self, health, position, speed, damage)
             CurEnemy.position=(position[0]+i*40,position[1])
             Army[i]=Enemy(self, health, position, speed, damage)
-
-<<<<<<< HEAD
 
 
 def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
@@ -346,17 +345,14 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
 
 
 def game_loop(screen, background, clock, highScores):
-    tim = Tim(10,1,10)
-=======
-def game_loop(screen, background, clock, highScores):
-    tim = Tim(3, 1, 10)
->>>>>>> cf337a1ef7fe7ded06671408c34e0f453b12e532
-    enemy = Enemy(5,(25,75),5,1)
+    tim = Tim(3,1,10)
+    enemy = Enemy(3,(25,75),5,1)
     livesMeter = LivesMeter(3)
     level = 1
     score = 0
     money = 0
     projectiles = []
+    projectiles1= []
     count = 0
     while True:
         # Background stuff
@@ -370,6 +366,8 @@ def game_loop(screen, background, clock, highScores):
         livesMeter.draw(screen)
         # Tim stuff
         tim.update()
+        
+
         tim.draw(screen)
         # Enemy stuff
         speed = (BOARD_WIDTH-50)/95
@@ -384,9 +382,18 @@ def game_loop(screen, background, clock, highScores):
         if count%69==1:
             projectiles.append(enemy.shoot())
         count+=1
+
         enemy.draw(screen)
         # Projectile stuff
         newProjectiles = []
+        newProjectiles1=[]
+
+        for projectile in projectiles1:
+            if projectile.move():
+                newProjectiles1.append(projectile)
+            projectile.draw(screen)
+        projectiles1 = newProjectiles1
+
         for projectile in projectiles:
             if projectile.move():
                 newProjectiles.append(projectile)
@@ -394,6 +401,19 @@ def game_loop(screen, background, clock, highScores):
         projectiles = newProjectiles
         # Collision stuff
         projectileRects = [projectile.rect for projectile in projectiles]
+        projectileRects1 = [projectile.rect for projectile in projectiles1]
+
+        index1 = enemy.rect.collidelist(projectileRects1)
+        if index1 != -1:
+            if enemy.takeDamage(projectiles1[index1].damage):
+                projectiles1.pop(index1)
+            else: # Enemy died!
+                enemy.draw(screen)
+                pygame.display.update()
+                clock.tick(10)
+                #projectiles1 = []
+                enemy=Enemy(3,(25,1000),5,1)
+
         index = tim.rect.collidelist(projectileRects)
         if index != -1:
             if tim.takeDamage(projectiles[index].damage):
@@ -422,7 +442,7 @@ def game_loop(screen, background, clock, highScores):
                 elif event.key == K_RIGHT:
                     tim.direction = 1
                 elif event.key == K_SPACE:
-                    projectiles.append(tim.shoot())
+                    projectiles1.append(tim.shoot())
             elif event.type == KEYUP:
                 if event.key == K_LEFT and tim.direction == -1:
                     tim.direction = 0
@@ -442,7 +462,7 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
     background = Background()
     highScores = HighScores()
-    state = UPGRADE_STATE
+    state = START_MENU_STATE
     while state != QUIT_STATE:
         if state == START_MENU_STATE:
             state = start_menu_loop(screen, background, clock)
