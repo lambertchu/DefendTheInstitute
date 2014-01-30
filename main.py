@@ -260,7 +260,7 @@ class Enemy(pygame.sprite.Sprite):
     def moveDown(self, speed):
         self.rect[1]+=speed
     def shoot(self): # returns a Projectile object for the main loop to handle
-        destPos = (self.rect[0]-self.rect[2]/2,self.rect[1]+50)
+        destPos = (self.rect[0]+self.rect[2]/2,self.rect[1]+50)
         return Projectile('./Pictures/plank.jpg',"down",destPos,self.damage)
     def draw(self, screen):
         screen.blit(self.image, self.rect)
@@ -344,7 +344,6 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
 
 def game_loop(screen, background, clock, highScores):
     tim = Tim(3, 1, 10)
-    enemy = Enemy(5,(25,75),5,1)
     livesMeter = LivesMeter(3)
     level = 1
     score = 0
@@ -365,19 +364,19 @@ def game_loop(screen, background, clock, highScores):
         tim.update()
         tim.draw(screen)
         # Enemy stuff
-        speed = (BOARD_WIDTH-50)/95
-        if count%200 < 95:
-            enemy.moveRight(speed)
-        elif count%200 < 100:
-            enemy.moveDown(speed)
-        elif count%200 < 195:
-            enemy.moveLeft(speed)
-        elif count%200 < 200:
-            enemy.moveDown(speed)
-        if count%69==1:
-            projectiles.append(enemy.shoot())
-        count+=1
-        enemy.draw(screen)
+        # speed = (BOARD_WIDTH-50)/95
+        # if count%200 < 95:
+        #     enemy.moveRight(speed)
+        # elif count%200 < 100:
+        #     enemy.moveDown(speed)
+        # elif count%200 < 195:
+        #     enemy.moveLeft(speed)
+        # elif count%200 < 200:
+        #     enemy.moveDown(speed)
+        # if count%69==1:
+        #     projectiles.append(enemy.shoot())
+        # count+=1
+        # enemy.draw(screen)
         # Projectile stuff
         newProjectiles = []
         for projectile in projectiles:
@@ -408,13 +407,13 @@ def game_loop(screen, background, clock, highScores):
                     pygame.display.update()
                     clock.tick(0.2)
                     return START_MENU_STATE
-        index = enemy.rect.collidelist(projectileRects)
+        # index = enemy.rect.collidelist(projectileRects)
         if index != -1:
             isAlive = enemy.takeDamage(projectiles[index].damage)
             projectiles.pop(index)
             projectileRects.pop(index)
             if not isAlive:
-                enemy = Enemy(5,(25,75),5,1)
+                # enemy = Enemy(5,(25,75),5,1)
                 score += 10
                 count = 0
         # Input handling
@@ -445,7 +444,7 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
     background = Background()
     highScores = HighScores()
-    state = UPGRADE_STATE
+    state = GAME_STATE
     while state != QUIT_STATE:
         if state == START_MENU_STATE:
             state = start_menu_loop(screen, background, clock)
