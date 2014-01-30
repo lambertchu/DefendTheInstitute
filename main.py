@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import pygame, sys
+import pygame, sys, math
 from pygame.locals import *
 from random import randint
 
@@ -241,10 +241,9 @@ class LivesMeter:
             screen.blit(self.image, (60+30*i, BOARD_HEIGHT-27.5))
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, health, position, speed, damage):
+    def __init__(self, health, position, damage):
         super(Enemy,self).__init__()
         self.health= health
-        self.speed= speed
         self.damage= damage
 
         self.image = pygame.image.load('./Pictures/Harvard.png').convert_alpha()
@@ -269,34 +268,60 @@ class Enemy(pygame.sprite.Sprite):
         return True if self.health > 0 else False
 
 class EnemyArmy(pygame.sprite.Sprite):
-    def __init__(self, number, health, position, speed, damage):
-        self.number=number
-        for i in range (number):
-            CurEnemy=Enemy(self, health, position, speed, damage)
-            CurEnemy.position=(position[0]+i*40,position[1])
-            self.Army[i]=Enemy(self, health, position, speed, damage)
-    def moveRight(self, speed):
-        for i in range (self.number):
-            self.Army[i].moveRight(speed)
-    def moveLeft(self, speed):
-        for i in range (self.number):
-            self.Army[i].moveLeft(speed)
-    def moveUp(self, speed):
-        for i in range (self.number):
-            self.Army[i].moveUp(speed)
-    def moveDown(self, speed):
-        for i in range (self.number):
-            self.Army[i].moveDown(speed)
+    def __init__(self, level):
+        self.number = int(math.ceil(math.sqrt(level)))+5
+        health = int(math.ceil(math.sqrt(level)))*3
+        self.speed = int(math.ceil(math.sqrt(level)))
+        damage = int(math.ceil(math.sqrt(level)))
+        self.position = [10,30]
+        self.direction = (1,0)
+        self.army = []
+        self.count = 0
+        for i in range(self.number):
+            enemyPosition = (self.position[0]+i*40, self.position[1])
+            self.army.append(Enemy(health, enemyPosition, damage))
+    def moveRight(self):
+        for i in range(len(self.army)):
+            self.army[i].moveRight(self.speed)
+        self.position[0]+=self.speed
+    def moveLeft(self):
+        for i in range(len(self.army)):
+            self.army[i].moveLeft(self.speed)
+        self.position[0]-=self.speed
+    def moveUp(self):
+        for i in range(len(self.army)):
+            self.army[i].moveUp(self.speed)
+        self.position[1]-=self.speed
+    def moveDown(self):
+        for i in range(len(self.army)):
+            self.army[i].moveDown(self.speed)
+        self.position[1]+=self.speed
     def shoot(self): # returns a Projectile object for the main loop to handle
-        return self.Army[randint(0, len(self.Army-1))].shoot()
+        return self.army[randint(0, len(self.army)-1)].shoot()
+    def update(self):
+        if self.direction == (1,0):
+            self.moveRight()
+            if self.number*40+self.position[0] >= BOARD_WIDTH-10:
+                self.direction = (0,-1)
+        elif self.direction == (0,-1):
+            self.moveDown()
+            if self.count >= 5:
+                self.count = 0
+                if self.position[0]+self.number*40 >= BOARD_WIDTH-10:
+                    self.direction = (-1,0)
+                elif self.position[0] <= 10:
+                    self.direction = (1,0)
+            else:
+                self.count+=1
+        elif self.direction == (-1,0):
+            self.moveLeft()
+            if self.position[0] <= 10:
+                self.direction = (0,-1)
     def draw(self, screen):
-        for i in range (self.number):
-            self.Army[i].draw(screen)
-    def takeDamage(self,inflictedDamage): # returns a bool saying if there are still units in the army
-        for i in range (self.number):
-            self.Army[i].health-=inflictedDamage
-        return True if len(self.Army)>0 else False
-    
+        for i in range(len(self.army)):
+            self.army[i].draw(screen)
+    def isEmpty(self):
+        return len(self.army)>0
 
 def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
     UPGRADE_DAMAGE_BUTTON = 1
@@ -369,10 +394,10 @@ def game_loop(screen, background, clock, highScores):
     tim = Tim(3, 1, 10)
     livesMeter = LivesMeter(3)
     level = 1
+    enemies = EnemyArmy(level)
     score = 0
     money = 0
     projectiles = []
-    count = 0
     while True:
         # Background stuff
         background.update()
@@ -387,19 +412,8 @@ def game_loop(screen, background, clock, highScores):
         tim.update()
         tim.draw(screen)
         # Enemy stuff
-        # speed = (BOARD_WIDTH-50)/95
-        # if count%200 < 95:
-        #     enemy.moveRight(speed)
-        # elif count%200 < 100:
-        #     enemy.moveDown(speed)
-        # elif count%200 < 195:
-        #     enemy.moveLeft(speed)
-        # elif count%200 < 200:
-        #     enemy.moveDown(speed)
-        # if count%69==1:
-        #     projectiles.append(enemy.shoot())
-        # count+=1
-        # enemy.draw(screen)
+        enemies.update()
+        enemies.draw(screen)
         # Projectile stuff
         newProjectiles = []
         for projectile in projectiles:
@@ -430,15 +444,18 @@ def game_loop(screen, background, clock, highScores):
                     pygame.display.update()
                     clock.tick(0.2)
                     return START_MENU_STATE
-        # index = enemy.rect.collidelist(projectileRects)
-        if index != -1:
-            isAlive = enemy.takeDamage(projectiles[index].damage)
-            projectiles.pop(index)
-            projectileRects.pop(index)
-            if not isAlive:
-                # enemy = Enemy(5,(25,75),5,1)
-                score += 10
-                count = 0
+        for enemy in enemies.army:
+            index = enemy.rect.collidelist(projectileRects)
+            if index != -1:
+                isAlive = enemy.takeDamage(projectiles[index].damage)
+                projectiles.pop(index)
+                projectileRects.pop(index)
+                if not isAlive:
+                    enemies.army.remove(enemy)
+                    score += 10
+        # Enemy Shooting
+        if pygame.time.get_ticks() % 20 <= len(enemies.army)-1:
+            projectiles.append(enemies.shoot())
         # Input handling
         for event in pygame.event.get():
             if event.type == KEYDOWN:
@@ -467,7 +484,7 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
     background = Background()
     highScores = HighScores()
-    state = GAME_STATE
+    state = START_MENU_STATE
     while state != QUIT_STATE:
         if state == START_MENU_STATE:
             state = start_menu_loop(screen, background, clock)
