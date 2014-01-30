@@ -270,10 +270,33 @@ class Enemy(pygame.sprite.Sprite):
 
 class EnemyArmy(pygame.sprite.Sprite):
     def __init__(self, number, health, position, speed, damage):
+        self.number=number
         for i in range (number):
             CurEnemy=Enemy(self, health, position, speed, damage)
             CurEnemy.position=(position[0]+i*40,position[1])
-            Army[i]=Enemy(self, health, position, speed, damage)
+            self.Army[i]=Enemy(self, health, position, speed, damage)
+    def moveRight(self, speed):
+        for i in range (self.number):
+            self.Army[i].moveRight(speed)
+    def moveLeft(self, speed):
+        for i in range (self.number):
+            self.Army[i].moveLeft(speed)
+    def moveUp(self, speed):
+        for i in range (self.number):
+            self.Army[i].moveUp(speed)
+    def moveDown(self, speed):
+        for i in range (self.number):
+            self.Army[i].moveDown(speed)
+    def shoot(self): # returns a Projectile object for the main loop to handle
+        return self.Army[randint(0, len(self.Army-1))].shoot()
+    def draw(self, screen):
+        for i in range (self.number):
+            self.Army[i].draw(screen)
+    def takeDamage(self,inflictedDamage): # returns a bool saying if there are still units in the army
+        for i in range (self.number):
+            self.Army[i].health-=inflictedDamage
+        return True if len(self.Army)>0 else False
+    
 
 def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
     UPGRADE_DAMAGE_BUTTON = 1
