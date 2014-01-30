@@ -407,6 +407,8 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
         # HUD stuff
         levelText = "Level: " + str(level)
         draw_text(screen,levelText,(100,25),25,white,black)
+        moneyText = "Money: $" + str(money)
+        draw_text(screen,moneyText,(BOARD_WIDTH-200,25),25,white,black)
         scoreText = "Score: " + str(score)
         draw_text(screen,scoreText,(BOARD_WIDTH-100,25),25,white,black)
         livesMeter.draw(screen)
@@ -455,6 +457,7 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
                 if not isAlive:
                     enemies.army.remove(enemy)
                     score += 10
+                    money+=5
         # Enemy Shooting
         if pygame.time.get_ticks() % 20 <= len(enemies.army)-1:
             projectiles.append(enemies.shoot())
@@ -475,6 +478,8 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
             if event.type == QUIT:
                 return QUIT_STATE
         # Stuff
+        if len(enemies.army)==0:
+            state=upgrade_menu_loop(screen,background,clock,money,timDamage,timSpeed)
         pygame.display.update()
         clock.tick(30)
 
