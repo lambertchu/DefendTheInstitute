@@ -13,9 +13,6 @@ HIGH_SCORES_STATE = 1
 GAME_STATE = 2
 UPGRADE_STATE = 3
 
-timDamage=1
-timSpeed=10
-
 # RGB Color definitions
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -231,6 +228,8 @@ class Tim(pygame.sprite.Sprite):
     def takeDamage(self,inflictedDamage): # returns a bool saying if Tim is alive
         self.health-=inflictedDamage
         return True if self.health > 0 else False
+    def refillHealth(self):
+        self.health = self.healthMeter.maxHealth
 
 class LivesMeter:
     def __init__(self, numLives):
@@ -323,15 +322,15 @@ class EnemyArmy(pygame.sprite.Sprite):
         for i in range(len(self.army)):
             self.army[i].draw(screen)
     def isEmpty(self):
-        return len(self.army)>0
+        return len(self.army)==0
 
 def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
     UPGRADE_DAMAGE_BUTTON = 1
     UPGRADE_SPEED_BUTTON = 2
     NEXT_LEVEL_BUTTON = 3
     selection = UPGRADE_DAMAGE_BUTTON
-    upgradeDamageCost=100
-    upgradeSpeedCost=75
+    upgradeDamageCost=math.ceil(10*1.5**timDamage)
+    upgradeSpeedCost=math.ceil(1.5**timSpeed)
     while True:
         background.update()
         background.draw(screen)
@@ -360,7 +359,7 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
                         selection = 3
                 elif event.key==K_RETURN:
                     if selection==NEXT_LEVEL_BUTTON:
-                        state = game_loop(screen, background, clock, highScores, timDamage, timSpeed)
+                        return (money, timDamage, timSpeed)
                     elif selection==UPGRADE_DAMAGE_BUTTON:
                         if money>=upgradeDamageCost:
                             money-=upgradeDamageCost
@@ -388,11 +387,13 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
                             pygame.display.update()
                             clock.tick(1)
             elif event.type == QUIT:
-                return (QUIT_STATE)
+                return QUIT_STATE
         pygame.display.update()
         clock.tick(30)
 
-def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
+def game_loop(screen, background, clock, highScores):
+    timDamage = 1
+    timSpeed = 10
     tim = Tim(3, timDamage, timSpeed)
     livesMeter = LivesMeter(3)
     level = 1
@@ -408,7 +409,7 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
         levelText = "Level: " + str(level)
         draw_text(screen,levelText,(100,25),25,white,black)
         moneyText = "Money: $" + str(money)
-        draw_text(screen,moneyText,(BOARD_WIDTH-200,25),25,white,black)
+        draw_text(screen,moneyText,(BOARD_WIDTH/2,25),25,white,black)
         scoreText = "Score: " + str(score)
         draw_text(screen,scoreText,(BOARD_WIDTH-100,25),25,white,black)
         livesMeter.draw(screen)
@@ -457,9 +458,9 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
                 if not isAlive:
                     enemies.army.remove(enemy)
                     score += 10
-                    money+=5
+                    money += 10
         # Enemy Shooting
-        if pygame.time.get_ticks() % 20 <= len(enemies.army)-1:
+        if pygame.time.get_ticks() % 30 <= len(enemies.army)-1:
             projectiles.append(enemies.shoot())
         # Input handling
         for event in pygame.event.get():
@@ -477,9 +478,18 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
                     tim.direction = 0
             if event.type == QUIT:
                 return QUIT_STATE
+        # Check for end of level
+        if enemies.isEmpty():
+            gameState = upgrade_menu_loop(screen,background,clock,money,timDamage,timSpeed)
+            if gameState == QUIT_STATE:
+                return QUIT_STATE
+            (money, timDamage, timSpeed) = gameState
+            tim = Tim(3, timDamage, timSpeed)
+            level += 1
+            enemies = EnemyArmy(level)
+            projectiles = []
+            tim.refillHealth()
         # Stuff
-        if len(enemies.army)==0:
-            state=upgrade_menu_loop(screen,background,clock,money,timDamage,timSpeed)
         pygame.display.update()
         clock.tick(30)
 
@@ -498,7 +508,7 @@ if __name__ == "__main__":
         elif state == HIGH_SCORES_STATE:
             state = high_scores_loop(screen, background, clock, highScores)
         elif state == GAME_STATE:
-            state = game_loop(screen, background, clock, highScores, timDamage, timSpeed)
+            state = game_loop(screen, background, clock, highScores)
         elif state == UPGRADE_STATE:
             state = upgrade_menu_loop(screen,background,clock,500,1,10)
     pygame.quit()
