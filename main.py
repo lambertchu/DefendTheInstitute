@@ -198,6 +198,7 @@ class HealthMeter:
 class Tim(pygame.sprite.Sprite):
     def __init__(self, health, damage, speed):
         super(Tim,self).__init__()
+        print "Health: " + str(health) + "\nDamage: " + str(damage)
         self.health = health
         self.damage = damage # damage of projectiles
         self.speed = speed # movement speed
@@ -271,7 +272,8 @@ class Enemy(pygame.sprite.Sprite):
 class EnemyArmy(pygame.sprite.Sprite):
     def __init__(self, level):
         self.number = int(math.ceil(math.sqrt(level)))+5
-        health = int(math.ceil(math.sqrt(level)))*3
+        # health = int(math.ceil(math.sqrt(level)))*3
+        health = math.ceil(1.6**level)
         self.speed = int(math.ceil(math.sqrt(level)))
         damage = int(math.ceil(math.sqrt(level)))
         self.position = [10,30]
@@ -324,24 +326,24 @@ class EnemyArmy(pygame.sprite.Sprite):
     def isEmpty(self):
         return len(self.army)==0
 
-def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
-    UPGRADE_DAMAGE_BUTTON = 1
-    UPGRADE_SPEED_BUTTON = 2
+def upgrade_menu_loop(screen, background, clock, money, timHealth, timDamage):
+    UPGRADE_HEALTH_BUTTON = 1
+    UPGRADE_DAMAGE_BUTTON = 2
     NEXT_LEVEL_BUTTON = 3
-    selection = UPGRADE_DAMAGE_BUTTON
+    selection = UPGRADE_HEALTH_BUTTON
+    upgradeHealthCost=math.ceil(10*1.5**timHealth)
     upgradeDamageCost=math.ceil(10*1.5**timDamage)
-    upgradeSpeedCost=math.ceil(1.5**timSpeed)
     while True:
         background.update()
         background.draw(screen)
         draw_text(screen,"UPGRADES",(BOARD_WIDTH/2,100),60,white,black)
         draw_text(screen,"AVAILABLE MONEY: $" + str(money),(BOARD_WIDTH/2,200),50,white,black)
+        textColor = black if selection==UPGRADE_HEALTH_BUTTON else white
+        backgroundColor = white if selection == UPGRADE_HEALTH_BUTTON else black
+        draw_text(screen,"UPGRADE HEALTH: $" + str(upgradeHealthCost),(BOARD_WIDTH/2,400),25,textColor,backgroundColor)
         textColor = black if selection==UPGRADE_DAMAGE_BUTTON else white
         backgroundColor = white if selection == UPGRADE_DAMAGE_BUTTON else black
         draw_text(screen,"UPGRADE BULLET DAMAGE: $" + str(upgradeDamageCost),(BOARD_WIDTH/2,350),25,textColor,backgroundColor)
-        textColor = black if selection==UPGRADE_SPEED_BUTTON else white
-        backgroundColor = white if selection == UPGRADE_SPEED_BUTTON else black
-        draw_text(screen,"UPGRADE MOVEMENT SPEED: $" + str(upgradeSpeedCost),(BOARD_WIDTH/2,400),25,textColor,backgroundColor)
 
         textColor = black if selection == NEXT_LEVEL_BUTTON else white
         backgroundColor = white if selection == NEXT_LEVEL_BUTTON else black
@@ -349,37 +351,36 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
 
         for event in pygame.event.get():
             if event.type == KEYDOWN:
-                if event.key==K_DOWN:
+                if event.key==K_UP:
                     selection+=1
                     if selection == 4:
                         selection = 1
-                elif event.key==K_UP:
+                elif event.key==K_DOWN:
                     selection-=1
                     if selection == 0:
                         selection = 3
                 elif event.key==K_RETURN:
                     if selection==NEXT_LEVEL_BUTTON:
-                        return (money, timDamage, timSpeed)
-                    elif selection==UPGRADE_DAMAGE_BUTTON:
-                        if money>=upgradeDamageCost:
-                            money-=upgradeDamageCost
-                            timDamage+=.5
-                            upgradeDamageCost=(int)(1.5*upgradeDamageCost)
-
-                            draw_text(screen,"BULLET DAMAGE UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
+                        return (money, timHealth, timDamage)
+                    elif selection==UPGRADE_HEALTH_BUTTON:
+                        if money>=upgradeHealthCost:
+                            money-=upgradeHealthCost
+                            timHealth+=1
+                            upgradeHealthCost=(int)(1.5*upgradeHealthCost)
+                            draw_text(screen,"HEALTH UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
                             pygame.display.update()
                             clock.tick(1)
                         else:
                             draw_text(screen,"NOT ENOUGH MONEY!", (BOARD_WIDTH/2,475),35,reds[0],black)
                             pygame.display.update()
                             clock.tick(1)
+                    elif selection==UPGRADE_DAMAGE_BUTTON:
+                        if money>=upgradeDamageCost:
+                            money-=upgradeDamageCost
+                            timDamage+=1
+                            upgradeDamageCost=(int)(1.5*upgradeDamageCost)
 
-                    elif selection==UPGRADE_SPEED_BUTTON:
-                        if money>=upgradeSpeedCost:
-                            money-=upgradeSpeedCost
-                            timSpeed+=.5
-                            upgradeSpeedCost=(int)(1.5*upgradeSpeedCost)
-                            draw_text(screen,"MOVEMENT SPEED UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
+                            draw_text(screen,"BULLET DAMAGE UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
                             pygame.display.update()
                             clock.tick(1)
                         else:
@@ -392,9 +393,9 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
         clock.tick(30)
 
 def game_loop(screen, background, clock, highScores):
+    timHealth = 3
     timDamage = 1
-    timSpeed = 10
-    tim = Tim(3, timDamage, timSpeed)
+    tim = Tim(timHealth, timDamage, 10)
     livesMeter = LivesMeter(3)
     level = 1
     enemies = EnemyArmy(level)
@@ -440,7 +441,7 @@ def game_loop(screen, background, clock, highScores):
                 pygame.display.update()
                 clock.tick(1)
                 projectiles = []
-                tim = Tim(3, 1, 10)
+                tim = Tim(timHealth, timDamage, 10)
                 livesMeter.lives -= 1
                 if livesMeter.lives == -1:
                     # Game Over
@@ -460,7 +461,7 @@ def game_loop(screen, background, clock, highScores):
                     score += 10
                     money += 10
         # Enemy Shooting
-        if pygame.time.get_ticks() % 30 <= len(enemies.army)-1:
+        if pygame.time.get_ticks() % 50 <= len(enemies.army)-1:
             projectiles.append(enemies.shoot())
         # Input handling
         for event in pygame.event.get():
@@ -480,11 +481,11 @@ def game_loop(screen, background, clock, highScores):
                 return QUIT_STATE
         # Check for end of level
         if enemies.isEmpty():
-            gameState = upgrade_menu_loop(screen,background,clock,money,timDamage,timSpeed)
+            gameState = upgrade_menu_loop(screen,background,clock,money,timHealth,timDamage)
             if gameState == QUIT_STATE:
                 return QUIT_STATE
-            (money, timDamage, timSpeed) = gameState
-            tim = Tim(3, timDamage, timSpeed)
+            (money, timHealth, timDamage) = gameState
+            tim = Tim(timHealth, timDamage, 10)
             level += 1
             enemies = EnemyArmy(level)
             projectiles = []
