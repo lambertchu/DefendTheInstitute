@@ -12,6 +12,7 @@ START_MENU_STATE = 0
 HIGH_SCORES_STATE = 1
 GAME_STATE = 2
 UPGRADE_STATE = 3
+GAME_OVER_STATE = 4
 
 # RGB Color definitions
 black = (0, 0, 0)
@@ -98,37 +99,39 @@ class HighScores:
 ##### Start Menu Loop #####
 def start_menu_loop(screen, background, clock):
     PLAY_BUTTON = 1
-    HIGH_SCORES_BUTTON = 2
-    QUIT_BUTTON = 3
+    #HIGH_SCORES_BUTTON = 2
+    QUIT_BUTTON = 2
     selection = PLAY_BUTTON
     while True:
         background.update()
         background.draw(screen)
         draw_text(screen,"Defend The Institute",(BOARD_WIDTH/2,150),60,white,black)
-        textColor = black if selection==PLAY_BUTTON else white
+        textColor = reds[0] if selection==PLAY_BUTTON else white
         backgroundColor = white if selection == PLAY_BUTTON else black
-        draw_text(screen,"Play",(BOARD_WIDTH/2,300),35,textColor,backgroundColor)
+        draw_text(screen,"Play",(BOARD_WIDTH/2,350),50,textColor,backgroundColor)
+        """
         textColor = black if selection==HIGH_SCORES_BUTTON else white
         backgroundColor = white if selection == HIGH_SCORES_BUTTON else black
         draw_text(screen,"High Scores",(BOARD_WIDTH/2,425),35,textColor,backgroundColor)
-        textColor = black if selection == QUIT_BUTTON else white
+        """
+        textColor = reds[0] if selection == QUIT_BUTTON else white
         backgroundColor = white if selection == QUIT_BUTTON else black
-        draw_text(screen,"Quit",(BOARD_WIDTH/2,550),35,textColor,backgroundColor)
+        draw_text(screen,"Quit",(BOARD_WIDTH/2,450),50,textColor,backgroundColor)
         for event in pygame.event.get():
             if event.type == KEYDOWN:
                 if event.key==K_DOWN:
                     selection+=1
-                    if selection == 4:
+                    if selection == 3:
                         selection = 1
                 elif event.key==K_UP:
                     selection-=1
                     if selection == 0:
-                        selection = 3
+                        selection = 2
                 elif event.key==K_RETURN:
                     if selection==PLAY_BUTTON:
                         return GAME_STATE
-                    elif selection==HIGH_SCORES_BUTTON:
-                        return HIGH_SCORES_STATE
+                    #elif selection==HIGH_SCORES_BUTTON:
+                        #return HIGH_SCORES_STATE
                     elif selection==QUIT_BUTTON:
                         return QUIT_STATE
             elif event.type == QUIT:
@@ -392,7 +395,17 @@ def upgrade_menu_loop(screen, background, clock, money, timHealth, timDamage):
         pygame.display.update()
         clock.tick(30)
 
-def game_loop(screen, background, clock, highScores):
+def game_over_loop(screen, background, clock, score):
+    while True:
+        background.update()
+        background.draw(screen)
+        draw_text(screen,"GAME OVER",(BOARD_WIDTH/2,200),60,reds[0],black)
+        draw_text(screen,"FINAL SCORE: " + str(score),(BOARD_WIDTH/2,400),40,white,black)
+        pygame.display.update()
+        clock.tick(.3)
+        return START_MENU_STATE
+
+def game_loop(screen, background, clock):
     timHealth = 3
     timDamage = 1
     tim = Tim(timHealth, timDamage, 10)
@@ -448,8 +461,8 @@ def game_loop(screen, background, clock, highScores):
                     draw_text(screen, "GAME OVER", (BOARD_WIDTH/2, BOARD_HEIGHT/2),\
                         50, white, black)
                     pygame.display.update()
-                    clock.tick(0.2)
-                    return START_MENU_STATE
+                    clock.tick(.7)
+                    return game_over_loop(screen, background, clock, score)
         for enemy in enemies.army:
             index = enemy.rect.collidelist(projectileRects)
             if index != -1:
@@ -501,15 +514,15 @@ if __name__ == "__main__":
     pygame.display.set_caption("Defend The Institute")
     clock = pygame.time.Clock()
     background = Background()
-    highScores = HighScores()
+    #highScores = HighScores()
     state = START_MENU_STATE
     while state != QUIT_STATE:
         if state == START_MENU_STATE:
             state = start_menu_loop(screen, background, clock)
-        elif state == HIGH_SCORES_STATE:
-            state = high_scores_loop(screen, background, clock, highScores)
+        #elif state == HIGH_SCORES_STATE:
+            #state = high_scores_loop(screen, background, clock, highScores)
         elif state == GAME_STATE:
-            state = game_loop(screen, background, clock, highScores)
+            state = game_loop(screen, background, clock)
         elif state == UPGRADE_STATE:
             state = upgrade_menu_loop(screen,background,clock,500,1,10)
     pygame.quit()
