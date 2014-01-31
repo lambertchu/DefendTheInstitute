@@ -203,7 +203,7 @@ class Tim(pygame.sprite.Sprite):
         self.damage = damage # damage of projectiles
         self.speed = speed # movement speed
         self.direction = 0
-        self.image = pygame.image.load('./Pictures/tim.jpg').convert_alpha()
+        self.image = pygame.image.load('./Pictures/tim-the-beaver.png').convert_alpha()
         self.rect = self.image.get_rect()
         self.rect[0] = BOARD_WIDTH/2
         self.rect[1] = BOARD_HEIGHT-100
