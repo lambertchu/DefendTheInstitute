@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import pygame, sys
+import pygame, sys, math
 from pygame.locals import *
 from random import randint
 
@@ -12,9 +12,6 @@ START_MENU_STATE = 0
 HIGH_SCORES_STATE = 1
 GAME_STATE = 2
 UPGRADE_STATE = 3
-
-timDamage=1
-timSpeed=10
 
 # RGB Color definitions
 black = (0, 0, 0)
@@ -201,6 +198,7 @@ class HealthMeter:
 class Tim(pygame.sprite.Sprite):
     def __init__(self, health, damage, speed):
         super(Tim,self).__init__()
+        print "Health: " + str(health) + "\nDamage: " + str(damage)
         self.health = health
         self.damage = damage # damage of projectiles
         self.speed = speed # movement speed
@@ -231,6 +229,8 @@ class Tim(pygame.sprite.Sprite):
     def takeDamage(self,inflictedDamage): # returns a bool saying if Tim is alive
         self.health-=inflictedDamage
         return True if self.health > 0 else False
+    def refillHealth(self):
+        self.health = self.healthMeter.maxHealth
 
 class LivesMeter:
     def __init__(self, numLives):
@@ -243,10 +243,9 @@ class LivesMeter:
             screen.blit(self.image, (60+30*i, BOARD_HEIGHT-27.5))
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, health, position, speed, damage):
+    def __init__(self, health, position, damage):
         super(Enemy,self).__init__()
         self.health= health
-        self.speed= speed
         self.damage= damage
 
         self.image = pygame.image.load('./Pictures/Harvard.png').convert_alpha()
@@ -263,7 +262,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect[1]+=speed
     def shoot(self): # returns a Projectile object for the main loop to handle
         destPos = (self.rect[0]+self.rect[2]/2,self.rect[1]+50)
-        return Projectile('./Pictures/plank.jpg',"down",destPos,self.damage)
+        return Projectile('./Pictures/red-laser.png',"down",destPos,self.damage)
     def draw(self, screen):
         screen.blit(self.image, self.rect)
     def takeDamage(self,inflictedDamage): # returns a bool saying if it is alive
@@ -271,53 +270,80 @@ class Enemy(pygame.sprite.Sprite):
         return True if self.health > 0 else False
 
 class EnemyArmy(pygame.sprite.Sprite):
-    def __init__(self, number, health, position, speed, damage):
-        self.number=number
-        for i in range (number):
-            CurEnemy=Enemy(self, health, position, speed, damage)
-            CurEnemy.position=(position[0]+i*40,position[1])
-            self.Army[i]=Enemy(self, health, position, speed, damage)
-    def moveRight(self, speed):
-        for i in range (self.number):
-            self.Army[i].moveRight(speed)
-    def moveLeft(self, speed):
-        for i in range (self.number):
-            self.Army[i].moveLeft(speed)
-    def moveUp(self, speed):
-        for i in range (self.number):
-            self.Army[i].moveUp(speed)
-    def moveDown(self, speed):
-        for i in range (self.number):
-            self.Army[i].moveDown(speed)
+    def __init__(self, level):
+        self.number = int(math.ceil(math.sqrt(level)))+5
+        # health = int(math.ceil(math.sqrt(level)))*3
+        health = math.ceil(1.6**level)
+        self.speed = int(math.ceil(math.sqrt(level)))
+        damage = int(math.ceil(math.sqrt(level)))
+        self.position = [10,30]
+        self.direction = (1,0)
+        self.army = []
+        self.count = 0
+        for i in range(self.number):
+            enemyPosition = (self.position[0]+i*40, self.position[1])
+            self.army.append(Enemy(health, enemyPosition, damage))
+    def moveRight(self):
+        for i in range(len(self.army)):
+            self.army[i].moveRight(self.speed)
+        self.position[0]+=self.speed
+    def moveLeft(self):
+        for i in range(len(self.army)):
+            self.army[i].moveLeft(self.speed)
+        self.position[0]-=self.speed
+    def moveUp(self):
+        for i in range(len(self.army)):
+            self.army[i].moveUp(self.speed)
+        self.position[1]-=self.speed
+    def moveDown(self):
+        for i in range(len(self.army)):
+            self.army[i].moveDown(self.speed)
+        self.position[1]+=self.speed
     def shoot(self): # returns a Projectile object for the main loop to handle
-        return self.Army[randint(0, len(self.Army-1))].shoot()
+        return self.army[randint(0, len(self.army)-1)].shoot()
+    def update(self):
+        if self.direction == (1,0):
+            self.moveRight()
+            if self.number*40+self.position[0] >= BOARD_WIDTH-10:
+                self.direction = (0,-1)
+        elif self.direction == (0,-1):
+            self.moveDown()
+            if self.count >= 5:
+                self.count = 0
+                if self.position[0]+self.number*40 >= BOARD_WIDTH-10:
+                    self.direction = (-1,0)
+                elif self.position[0] <= 10:
+                    self.direction = (1,0)
+            else:
+                self.count+=1
+        elif self.direction == (-1,0):
+            self.moveLeft()
+            if self.position[0] <= 10:
+                self.direction = (0,-1)
     def draw(self, screen):
-        for i in range (self.number):
-            self.Army[i].draw(screen)
-    def takeDamage(self,inflictedDamage): # returns a bool saying if there are still units in the army
-        for i in range (self.number):
-            self.Army[i].health-=inflictedDamage
-        return True if len(self.Army)>0 else False
-    
+        for i in range(len(self.army)):
+            self.army[i].draw(screen)
+    def isEmpty(self):
+        return len(self.army)==0
 
-def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
-    UPGRADE_DAMAGE_BUTTON = 1
-    UPGRADE_SPEED_BUTTON = 2
+def upgrade_menu_loop(screen, background, clock, money, timHealth, timDamage):
+    UPGRADE_HEALTH_BUTTON = 1
+    UPGRADE_DAMAGE_BUTTON = 2
     NEXT_LEVEL_BUTTON = 3
-    selection = UPGRADE_DAMAGE_BUTTON
-    upgradeDamageCost=100
-    upgradeSpeedCost=75
+    selection = UPGRADE_HEALTH_BUTTON
+    upgradeHealthCost=math.ceil(10*1.5**timHealth)
+    upgradeDamageCost=math.ceil(10*1.5**timDamage)
     while True:
         background.update()
         background.draw(screen)
         draw_text(screen,"UPGRADES",(BOARD_WIDTH/2,100),60,white,black)
         draw_text(screen,"AVAILABLE MONEY: $" + str(money),(BOARD_WIDTH/2,200),50,white,black)
+        textColor = black if selection==UPGRADE_HEALTH_BUTTON else white
+        backgroundColor = white if selection == UPGRADE_HEALTH_BUTTON else black
+        draw_text(screen,"UPGRADE HEALTH: $" + str(upgradeHealthCost),(BOARD_WIDTH/2,400),25,textColor,backgroundColor)
         textColor = black if selection==UPGRADE_DAMAGE_BUTTON else white
         backgroundColor = white if selection == UPGRADE_DAMAGE_BUTTON else black
         draw_text(screen,"UPGRADE BULLET DAMAGE: $" + str(upgradeDamageCost),(BOARD_WIDTH/2,350),25,textColor,backgroundColor)
-        textColor = black if selection==UPGRADE_SPEED_BUTTON else white
-        backgroundColor = white if selection == UPGRADE_SPEED_BUTTON else black
-        draw_text(screen,"UPGRADE MOVEMENT SPEED: $" + str(upgradeSpeedCost),(BOARD_WIDTH/2,400),25,textColor,backgroundColor)
 
         textColor = black if selection == NEXT_LEVEL_BUTTON else white
         backgroundColor = white if selection == NEXT_LEVEL_BUTTON else black
@@ -325,23 +351,33 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
 
         for event in pygame.event.get():
             if event.type == KEYDOWN:
-                if event.key==K_DOWN:
+                if event.key==K_UP:
                     selection+=1
                     if selection == 4:
                         selection = 1
-                elif event.key==K_UP:
+                elif event.key==K_DOWN:
                     selection-=1
                     if selection == 0:
                         selection = 3
                 elif event.key==K_RETURN:
                     if selection==NEXT_LEVEL_BUTTON:
-                        print timDamage
-                        print timSpeed
-                        state = game_loop(screen, background, clock, highScores, timDamage, timSpeed)
+                        return (money, timHealth, timDamage)
+                    elif selection==UPGRADE_HEALTH_BUTTON:
+                        if money>=upgradeHealthCost:
+                            money-=upgradeHealthCost
+                            timHealth+=1
+                            upgradeHealthCost=(int)(1.5*upgradeHealthCost)
+                            draw_text(screen,"HEALTH UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
+                            pygame.display.update()
+                            clock.tick(1)
+                        else:
+                            draw_text(screen,"NOT ENOUGH MONEY!", (BOARD_WIDTH/2,475),35,reds[0],black)
+                            pygame.display.update()
+                            clock.tick(1)
                     elif selection==UPGRADE_DAMAGE_BUTTON:
                         if money>=upgradeDamageCost:
                             money-=upgradeDamageCost
-                            timDamage+=.5
+                            timDamage+=1
                             upgradeDamageCost=(int)(1.5*upgradeDamageCost)
 
                             draw_text(screen,"BULLET DAMAGE UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
@@ -351,32 +387,21 @@ def upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed):
                             draw_text(screen,"NOT ENOUGH MONEY!", (BOARD_WIDTH/2,475),35,reds[0],black)
                             pygame.display.update()
                             clock.tick(1)
-
-                    elif selection==UPGRADE_SPEED_BUTTON:
-                        if money>=upgradeSpeedCost:
-                            money-=upgradeSpeedCost
-                            timSpeed+=.5
-                            upgradeSpeedCost=(int)(1.5*upgradeSpeedCost)
-                            draw_text(screen,"MOVEMENT SPEED UPGRADED!", (BOARD_WIDTH/2,475),35,reds[0],black)
-                            pygame.display.update()
-                            clock.tick(1)
-                        else:
-                            draw_text(screen,"NOT ENOUGH MONEY!", (BOARD_WIDTH/2,475),35,reds[0],black)
-                            pygame.display.update()
-                            clock.tick(1)
             elif event.type == QUIT:
-                return (QUIT_STATE)
+                return QUIT_STATE
         pygame.display.update()
         clock.tick(30)
 
-def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
-    tim = Tim(3, timDamage, timSpeed)
+def game_loop(screen, background, clock, highScores):
+    timHealth = 3
+    timDamage = 1
+    tim = Tim(timHealth, timDamage, 10)
     livesMeter = LivesMeter(3)
     level = 1
+    enemies = EnemyArmy(level)
     score = 0
     money = 0
     projectiles = []
-    count = 0
     while True:
         # Background stuff
         background.update()
@@ -384,6 +409,8 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
         # HUD stuff
         levelText = "Level: " + str(level)
         draw_text(screen,levelText,(100,25),25,white,black)
+        moneyText = "Money: $" + str(money)
+        draw_text(screen,moneyText,(BOARD_WIDTH/2,25),25,white,black)
         scoreText = "Score: " + str(score)
         draw_text(screen,scoreText,(BOARD_WIDTH-100,25),25,white,black)
         livesMeter.draw(screen)
@@ -391,19 +418,8 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
         tim.update()
         tim.draw(screen)
         # Enemy stuff
-        # speed = (BOARD_WIDTH-50)/95
-        # if count%200 < 95:
-        #     enemy.moveRight(speed)
-        # elif count%200 < 100:
-        #     enemy.moveDown(speed)
-        # elif count%200 < 195:
-        #     enemy.moveLeft(speed)
-        # elif count%200 < 200:
-        #     enemy.moveDown(speed)
-        # if count%69==1:
-        #     projectiles.append(enemy.shoot())
-        # count+=1
-        # enemy.draw(screen)
+        enemies.update()
+        enemies.draw(screen)
         # Projectile stuff
         newProjectiles = []
         for projectile in projectiles:
@@ -425,7 +441,7 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
                 pygame.display.update()
                 clock.tick(1)
                 projectiles = []
-                tim = Tim(3, 1, 10)
+                tim = Tim(timHealth, timDamage, 10)
                 livesMeter.lives -= 1
                 if livesMeter.lives == -1:
                     # Game Over
@@ -434,21 +450,19 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
                     pygame.display.update()
                     clock.tick(0.2)
                     return START_MENU_STATE
-        # index = enemy.rect.collidelist(projectileRects)
-        if index != -1:
-            isAlive = enemy.takeDamage(projectiles[index].damage)
-            projectiles.pop(index)
-            projectileRects.pop(index)
-            if not isAlive:
-                # enemy = Enemy(5,(25,75),5,1)
-                score += 10
-                count = 0
-
-
-        # if all enemies are destroyed
-        #state = upgrade_menu_loop(screen, background, clock, money, timDamage, timSpeed)
-
-        
+        for enemy in enemies.army:
+            index = enemy.rect.collidelist(projectileRects)
+            if index != -1:
+                isAlive = enemy.takeDamage(projectiles[index].damage)
+                projectiles.pop(index)
+                projectileRects.pop(index)
+                if not isAlive:
+                    enemies.army.remove(enemy)
+                    score += 10
+                    money += 10
+        # Enemy Shooting
+        if pygame.time.get_ticks() % 50 <= len(enemies.army)-1:
+            projectiles.append(enemies.shoot())
         # Input handling
         for event in pygame.event.get():
             if event.type == KEYDOWN:
@@ -465,6 +479,17 @@ def game_loop(screen, background, clock, highScores, timDamage, timSpeed):
                     tim.direction = 0
             if event.type == QUIT:
                 return QUIT_STATE
+        # Check for end of level
+        if enemies.isEmpty():
+            gameState = upgrade_menu_loop(screen,background,clock,money,timHealth,timDamage)
+            if gameState == QUIT_STATE:
+                return QUIT_STATE
+            (money, timHealth, timDamage) = gameState
+            tim = Tim(timHealth, timDamage, 10)
+            level += 1
+            enemies = EnemyArmy(level)
+            projectiles = []
+            tim.refillHealth()
         # Stuff
         pygame.display.update()
         clock.tick(30)
@@ -477,14 +502,14 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
     background = Background()
     highScores = HighScores()
-    state = UPGRADE_STATE
+    state = START_MENU_STATE
     while state != QUIT_STATE:
         if state == START_MENU_STATE:
             state = start_menu_loop(screen, background, clock)
         elif state == HIGH_SCORES_STATE:
             state = high_scores_loop(screen, background, clock, highScores)
         elif state == GAME_STATE:
-            state = game_loop(screen, background, clock, highScores, timDamage, timSpeed)
+            state = game_loop(screen, background, clock, highScores)
         elif state == UPGRADE_STATE:
             state = upgrade_menu_loop(screen,background,clock,500,1,10)
     pygame.quit()
