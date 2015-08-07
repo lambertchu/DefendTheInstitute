@@ -9,7 +9,6 @@ BOARD_WIDTH = SPRITE_WIDTH*12
 BOARD_HEIGHT = SPRITE_WIDTH*18
 QUIT_STATE = -1
 START_MENU_STATE = 0
-HIGH_SCORES_STATE = 1
 GAME_STATE = 2
 UPGRADE_STATE = 3
 GAME_OVER_STATE = 4
@@ -73,29 +72,6 @@ class BackgroundThing:
             rect=(self.x,self.y-self.width*i,self.width,self.width)
             pygame.draw.rect(screen,self.colors[i],rect)
 
-##### High Scores #####
-class HighScores:
-    def __init__(self):
-        self.filename = "highScores.txt"
-        content = []
-        with open(self.filename) as f:
-            content = f.readlines()
-        self.content = [line.strip().split(',') for line in content]
-    def saveToFile(self):
-        with open(self.filename, 'w') as f:
-            for thing in self.content:
-                f.write(thing.join(','))
-                f.write('\n')
-            f.truncate()
-    def addScore(self, name, level, score):
-        self.content.append([name,level,score])
-        firstItem = self.content.pop(0)
-        self.content.sort(lambda x,y:cmp(x[2],y[2]))
-        self.content.insert(0,firstItem)
-        while len(self.content>11):
-            self.content.pop()
-        self.saveToFile()
-
 ##### Start Menu Loop #####
 def start_menu_loop(screen, background, clock):
     PLAY_BUTTON = 1
@@ -134,28 +110,6 @@ def start_menu_loop(screen, background, clock):
                         #return HIGH_SCORES_STATE
                     elif selection==QUIT_BUTTON:
                         return QUIT_STATE
-            elif event.type == QUIT:
-                return QUIT_STATE
-        pygame.display.update()
-        clock.tick(30)
-
-##### High Scores Loop #####
-def high_scores_loop(screen, background, clock, highScores):
-    while True:
-        background.update()
-        background.draw(screen)
-        draw_text(screen,"High Scores",(BOARD_WIDTH/2,100),50,white,black)
-        for i in range(len(highScores.content)):
-            position = (BOARD_WIDTH/4,200+(BOARD_HEIGHT-300)/11*i)
-            draw_text(screen,highScores.content[i][0],position,30,white,black)
-            position = (BOARD_WIDTH/2,position[1])
-            draw_text(screen,highScores.content[i][1],position,30,white,black)
-            position = (3*BOARD_WIDTH/4,position[1])
-            draw_text(screen,highScores.content[i][2],position,30,white,black)
-        for event in pygame.event.get():
-            if event.type == KEYDOWN:
-                if event.key==K_RETURN:
-                    return START_MENU_STATE
             elif event.type == QUIT:
                 return QUIT_STATE
         pygame.display.update()
@@ -201,14 +155,13 @@ class HealthMeter:
 class Tim(pygame.sprite.Sprite):
     def __init__(self, health, damage, speed):
         super(Tim,self).__init__()
-        print "Health: " + str(health) + "\nDamage: " + str(damage)
         self.health = health
         self.damage = damage # damage of projectiles
         self.speed = speed # movement speed
         self.direction = 0
         self.image = pygame.image.load('./Pictures/tim-the-beaver.png').convert_alpha()
         self.rect = self.image.get_rect()
-        self.rect[0] = BOARD_WIDTH/2
+        self.rect[0] = BOARD_WIDTH/2zz
         self.rect[1] = BOARD_HEIGHT-100
         healthRect = pygame.Rect(self.rect[0],self.rect[1]+self.rect[3]*.75,\
             self.rect[2], self.rect[3]*.25)
@@ -519,8 +472,6 @@ if __name__ == "__main__":
     while state != QUIT_STATE:
         if state == START_MENU_STATE:
             state = start_menu_loop(screen, background, clock)
-        #elif state == HIGH_SCORES_STATE:
-            #state = high_scores_loop(screen, background, clock, highScores)
         elif state == GAME_STATE:
             state = game_loop(screen, background, clock)
         elif state == UPGRADE_STATE:
